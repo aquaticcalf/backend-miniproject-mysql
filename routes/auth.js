@@ -33,13 +33,13 @@ router.post('/login', async (request, response) => {
         const { username, password } = request.body
 
         // find user
-        const [ foundUser ] = await db.execute('SELECT * FROM users WHERE username = ?', [ username ])
+        const [ foundUser ] = await User.findOne({ where: { username } })
         if ( foundUser.length === 0 ) {
             return response.status(400).json({ message: 'invalid credentials' })
         }
 
         // check if password is correct
-        const isPasswordValid = await bcrypt.compare(password, foundUser[0].password)
+        const isPasswordValid = await user.validatePassword(password)
         if(!isPasswordValid) {
             return response.status(400).json({ message : 'invalid credentials' })
         }
