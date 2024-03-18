@@ -70,6 +70,7 @@ router.post('/new', auth, async (request, response) =>{
     }
 })
 
+// search for a post
 router.get('/search', async (request, response) => {
     try {
         const { title, tags } = request.query
