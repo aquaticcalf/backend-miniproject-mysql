@@ -16,7 +16,7 @@ router.get('/post/:postId', async (request, response) => {
         if (!post) {
             return response.status(404).json({ message : 'post not found' })
         }
-        response.json.(post.Comments)
+        response.json(post.Comments)
     }
     catch ( error ) {
         console.log(error)
