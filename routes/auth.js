@@ -1,47 +1,26 @@
 const router = require('express').Router()
-const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-const db = require('../db')
-const auth = require('../middleware/auth')
+const { User } = require('./models')
+const { UniqueConstraintError } = require('sequelize')
 
 // register
 router.post('/register', async (request, response) => {
     try {
 
         const { username, email, password } = request.body
+        const user = await User.create({ username, email, password })
 
-        // check if user exists already
-
-        const [ existingUser ] = await db.execute('SELECT * FROM users WHERE email = ?', [ email ]) || await db.execute('SELECT * FROM users WHERE username = ?', [ username ])
-
-        if ( existingUser.length > 0 ) {
-            return response.status(400).json({ message: 'user already exists' })
-        }
-
-        // hash the password
-
-        const saltRounds = 10
-
-        const hashedPassword = await bcrypt.hash( password, saltRounds )
-        
-        // insert new user into database
-
-        const [ result ] = await db.execute('INSERT INTO users ( username, email, password ) VALUES ( ?, ?, ? )', [
-            username,
-            email,
-            hashedPassword,
-        ])
-
-        response.status(201).json({ message: 'user registered successfully' })
+        response.status(201).json(user)
 
         // todo : email verification
     }
     catch (error) {
-
-        // really bad error handling system for now
+        
+        if ( error instanceof UniqueConstraintError ) {
+            return response.json({ message : 'user already exists' })
+        }
         
         console.log(error)
-
         response.status(500).json({ message: 'error' })
 
     }
