@@ -1,7 +1,7 @@
-const express = require('express');
-const app = express();
+const express = require('express')
+const app = express()
 
-app.use(express.json());
+app.use(express.json())
 
 const authRoutes = require('./routes/auth')
 const postRoutes = require('./routes/posts')
