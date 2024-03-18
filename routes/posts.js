@@ -29,7 +29,7 @@ router.get('/:postid', async (request, response) => {
         })
 
         if (!posts) {
-            return res.status(404).json({ message: 'post not found' });
+            return res.status(404).json({ message: 'post not found' })
         }
 
         response.json(posts[0])
