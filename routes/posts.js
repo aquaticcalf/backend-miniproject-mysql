@@ -43,6 +43,12 @@ router.post('/new', auth, async (request, response) =>{
 
         // wait a sec, i think i got a better way to deal with this
     }
+
+    catch (error) {
+        // really bad error handling system for now
+        console.log(error)
+        response.status(500).json({ message: 'error' })
+    }
 })
 
 module.exports = router
