@@ -3,7 +3,7 @@ const { Post, Comment, User } = require('../models')
 const auth = require('../middleware/auth')
 
 // get all comments for a post
-router.get('/post/:postId', async (request, response) => {
+router.get('/:postId', async (request, response) => {
     try {
         const post = await Post.findByPk(request.params.postId, {
             include : [
@@ -25,7 +25,7 @@ router.get('/post/:postId', async (request, response) => {
 })
 
 // create a new comment
-router.post('/post/:postId', auth, async (request, response) => {
+router.post('/:postId', auth, async (request, response) => {
     try {
         const { content } = request.body
         const postId = request.params.postId
