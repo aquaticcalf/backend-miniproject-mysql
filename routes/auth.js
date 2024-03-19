@@ -39,7 +39,7 @@ router.post('/login', async (request, response) => {
         }
 
         // check if password is correct
-        const isPasswordValid = await user.validatePassword(password)
+        const isPasswordValid = await foundUser.validatePassword(password)
         if(!isPasswordValid) {
             return response.status(400).json({ message : 'invalid credentials' })
         }
