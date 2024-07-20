@@ -1,28 +1,37 @@
 const jwt = require('jsonwebtoken')
-const { User } = require('../models')
+const { User } = require('../models').default
+import { UnauthorizedError } from ('../errors')
 
-const auth = async ( request, response, next ) => {
-	const token = request.header('Authorization')
+const auth = async (request, response, next) => {
+  const secretKey = process.env.JWT_SECRET_KEY
+  const token = request.headers.authorization?.split(' ')[1] || request.query.token || request.cookies.token
 
-	if( !token ) {
-		return response.status(401).json({ message : 'authorization denied' })
-	}
+  if (!token) {
+    throw new UnauthorizedError('Authorization token is missing')
+  }
 
-	try {
-		const decoded = jwt.verify( token, 'secret_key' )
-		const user = await User.findByPk(decoded.userId)
+  try {
+    const decoded = jwt.verify(token, secretKey)
+    const user = await User.findByPk(decoded.userId)
 
-		if (!user) {
-			return response.status(401).json({ message : 'invalid token' })
-		}
+    if (!user) {
+      throw new UnauthorizedError('Invalid token')
+    }
 
-		request.user = user
-		next()
-	}
+    // check if the token has expired
+    if (decoded.exp < Date.now() / 1000) {
+      throw new UnauthorizedError('Token has expired')
+    }
 
-	catch (error) {
-		response.status(400).json({ message : 'invalid token' })
-	}
+    request.user = user
+    next()
+  } catch (error) {
+	// error handling
+	if (error instanceof jwt.JsonWebTokenError) {
+      throw new UnauthorizedError('Invalid token')
+    }
+    throw error
+  }
 }
 
 module.exports = auth

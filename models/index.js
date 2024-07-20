@@ -1,46 +1,47 @@
-const { Sequelize, DataTypes } = require('sequelize')
-const bcrypt = require('bcrypt')
+import { Sequelize, DataTypes } from 'sequelize'
+import { genSalt, hash, compare } from 'bcrypt'
 
 const sequelize = new Sequelize('database', 'username', 'password', {
-    host : 'localhost',
+    host: 'localhost',
     dialect: 'mysql',
 })
 
-const User = sequelize.define('User', 
-    {
-        username : {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-        },
-        email : {
-            type: DataTypes.STRING,
-            allowNull: false,
-            unique: true, 
-        },
-        password : {
-            type: DataTypes.STRING,
-            allowNull: false,
+const User = sequelize.define('User', {
+    username: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
+    email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
+    password: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    bio: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    profilePicture: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+}, {
+    hooks: {
+        beforeCreate: async (user) => {
+            if (user.password) {
+                const salt = await genSalt(10)
+                user.password = await hash(user.password, salt)
+            }
         },
     },
-    
-    {
-        hooks: {
-            beforeCreate: async (user) => {
-                if ( user.password ) {
-                    const salt = await bcrypt.genSalt(10)
-                    user.password = await bcrypt.hash( user.password, salt )
-                }
-            }
-        }
-    }
-
-)
-
-// validate password
+})
 
 User.prototype.validatePassword = async function (password) {
-    return await bcrypt.compare(password, this.password)
+    return await compare(password, this.password)
 }
 
 const Post = sequelize.define('Post', {
@@ -50,14 +51,28 @@ const Post = sequelize.define('Post', {
     },
     content: {
         type: DataTypes.TEXT,
-        allowNull: false,    
+        allowNull: false,
+    },
+    featuredImage: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    publishedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
     },
 })
 
 const Comment = sequelize.define('Comment', {
     content: {
         type: DataTypes.TEXT,
-        allowNull: false,    
+        allowNull: false,
+    },
+    createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
     },
 })
 
@@ -65,7 +80,19 @@ const Tag = sequelize.define('Tag', {
     name: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true,    
+        unique: true,
+    },
+})
+
+const Topic = sequelize.define('Topic', {
+    name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
     },
 })
 
@@ -78,4 +105,7 @@ Comment.belongsTo(User)
 Post.belongsToMany(Tag, { through: 'PostTag' })
 Tag.belongsToMany(Post, { through: 'PostTag' })
 
-module.exports = { User, Post, Comment, Tag }
+Post.belongsTo(Topic)
+Topic.hasMany(Post)
+
+export default { User, Post, Comment, Tag, Topic }

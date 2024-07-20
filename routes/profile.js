@@ -1,20 +1,20 @@
 const router = require('express').Router()
-const { Post, Comment, User, Tag } = require('../models')
-const auth = require('../middleware/auth')
-const { Op } = require('sequelize')
+import { Post, Comment, User, Tag, Topic } from '../models'
+import auth from '../middleware/auth'
+import { NotFoundError } from '../utils/errors'
 
 // self profile
-router.get('/', auth, async (request, response) => {
+router.get('/', auth, async (request, response, next) => {
     try {
         const username = request.user.username
 
         const user = await User.findOne({
-            where: { username }, 
-            attributes: ['id', 'username'],
+            where: { username },
+            attributes: ['id', 'username', 'bio', 'profilePicture'],
             include: [
                 {
                     model: Post,
-                    include: [Comment, Tag],
+                    include: [Comment, Tag, Topic],
                 },
                 {
                     model: Comment,
@@ -23,17 +23,20 @@ router.get('/', auth, async (request, response) => {
             ],
         })
 
-        if ( !user ) {
-            return response.status(404).json({ message : 'user not found' })
+        if (!user) {
+            throw new NotFoundError('user not found')
         }
 
         const userProfile = {
             id: user.id,
             username: user.username,
+            bio: user.bio,
+            profilePicture: user.profilePicture,
             posts: user.Posts.map((post) => ({
                 id: post.id,
                 title: post.title,
                 content: post.content,
+                topic: post.Topic ? { id: post.Topic.id, name: post.Topic.name } : null,
                 tags: post.Tags.map((tag) => ({
                     id: tag.id,
                     tag: tag.name,
@@ -51,27 +54,24 @@ router.get('/', auth, async (request, response) => {
             })),
         }
 
-        response.json( userProfile )
-    }
-
-    catch ( error ) {
-        console.log( error )
-        response.status(500).json({ message: 'error' })
+        response.json(userProfile)
+    } catch (error) {
+        next(error)
     }
 })
 
 // others profile
-router.get('/:username', async (request, response) => {
+router.get('/:username', async (request, response, next) => {
     try {
         const username = request.params.username
 
         const user = await User.findOne({
-            where: { username }, 
-            attributes: ['id', 'username'],
+            where: { username },
+            attributes: ['id', 'username', 'bio', 'profilePicture'],
             include: [
                 {
                     model: Post,
-                    include: [Comment, Tag],
+                    include: [Comment, Tag, Topic],
                 },
                 {
                     model: Comment,
@@ -80,17 +80,20 @@ router.get('/:username', async (request, response) => {
             ],
         })
 
-        if ( !user ) {
-            return response.status(404).json({ message : 'user not found' })
+        if (!user) {
+            throw new NotFoundError('user not found')
         }
 
         const userProfile = {
             id: user.id,
             username: user.username,
+            bio: user.bio,
+            profilePicture: user.profilePicture,
             posts: user.Posts.map((post) => ({
                 id: post.id,
                 title: post.title,
                 content: post.content,
+                topic: post.Topic ? { id: post.Topic.id, name: post.Topic.name } : null,
                 tags: post.Tags.map((tag) => ({
                     id: tag.id,
                     tag: tag.name,
@@ -108,12 +111,10 @@ router.get('/:username', async (request, response) => {
             })),
         }
 
-        response.json( userProfile )
-    }
-
-    catch ( error ) {
-        console.log( error )
-        response.status(500).json({ message: 'error' })
+        response.json(userProfile)
+    } catch (error) {
+        next(error)
     }
 })
 
+export default router

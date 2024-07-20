@@ -1,30 +1,28 @@
 const router = require('express').Router()
-const jwt = require('jsonwebtoken')
-const { User } = require('../models')
-const { UniqueConstraintError } = require('sequelize')
+import { User } from '../models'
+import { UniqueConstraintError } from 'sequelize'
+import { sendVerificationEmail } from '../utils/emailUtils'
+import { generateToken } from '../utils/tokenUtils'
 
 // register
 router.post('/register', async (request, response) => {
     try {
-
         const { username, email, password } = request.body
         const user = await User.create({ username, email, password })
 
-        response.status(201).json(user)
+        // send verification email
+        const verificationToken = generateToken({ userId: user.id }, '1d')
+        await sendVerificationEmail(user.email, verificationToken)
 
-        // todo : email verification
-    }
-    catch (error) {
-        
-        if ( error instanceof UniqueConstraintError ) {
-            return response.json({ message : 'user already exists' })
+        response.status(201).json({ message: 'User registered successfully. Please check your email for verification.' })
+    } catch (error) {
+        if (error instanceof UniqueConstraintError) {
+            return response.status(409).json({ message: 'User already exists' })
         }
-        
-        console.log(error)
-        response.status(500).json({ message: 'error' })
 
+        console.error(error)
+        response.status(500).json({ message: 'Internal server error' })
     }
-  
 })
 
 // login
@@ -33,33 +31,52 @@ router.post('/login', async (request, response) => {
         const { username, password } = request.body
 
         // find user
-        const [ foundUser ] = await User.findOne({ where: { username } })
-        if ( foundUser.length === 0 ) {
-            return response.status(400).json({ message: 'invalid credentials' })
+        const user = await User.findOne({ where: { username } })
+        if (!user) {
+            return response.status(400).json({ message: 'Invalid credentials' })
         }
 
         // check if password is correct
-        const isPasswordValid = await foundUser.validatePassword(password)
-        if(!isPasswordValid) {
-            return response.status(400).json({ message : 'invalid credentials' })
+        const isPasswordValid = await user.validatePassword(password)
+        if (!isPasswordValid) {
+            return response.status(400).json({ message: 'Invalid credentials' })
         }
 
-        // generate a jwt
-        const token = jwt.sign({ userId: foundUser[0].id }, 'secret_key', { expiresIn: '1h' })
+        // check if user is verified
+        if (!user.isVerified) {
+            return response.status(403).json({ message: 'Please verify your email before logging in' })
+        }
+
+        // generate jwt
+        const token = generateToken({ userId: user.id }, '1h')
 
         response.json({ token })
-
-        // todo : forgot password
-    }
-    catch (error) {
-
-        // really bad error handling system for now
-        
-        console.log(error)
-
-        response.status(500).json({ message: 'error' })
-
+    } catch (error) {
+        console.error(error)
+        response.status(500).json({ message: 'Internal server error' })
     }
 })
 
-module.exports = router
+// forgot password
+router.post('/forgot-password', async (request, response) => {
+    try {
+        const { email } = request.body
+
+        // find user by email
+        const user = await User.findOne({ where: { email } })
+        if (!user) {
+            return response.status(404).json({ message: 'User not found' })
+        }
+
+        // generate reset token and send password reset email
+        const resetToken = generateToken({ userId: user.id }, '1h')
+        await sendPasswordResetEmail(user.email, resetToken)
+
+        response.json({ message: 'Password reset email sent' })
+    } catch (error) {
+        console.error(error)
+        response.status(500).json({ message: 'Internal server error' })
+    }
+})
+
+export default router

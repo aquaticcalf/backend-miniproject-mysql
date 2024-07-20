@@ -1,101 +1,89 @@
 const router = require('express').Router()
-const { Post, Comment, User, Tag } = require('../models')
-const auth = require('../middleware/auth')
-const { Op } = require('sequelize')
+import { Post, Comment, User, Tag, Topic } from '../models'
+import auth from '../middleware/auth'
+import { Op } from 'sequelize'
+import { NotFoundError } from '../utils/errors'
 
 // get all posts
-router.get('/', async (request, response) => {
+router.get('/', async (request, response, next) => {
     try {
         const posts = await Post.findAll({
-            include: [User, Tag],
+            include: [User, Tag, Topic],
         })
-        response.json( posts )
+        response.json(posts)
+    } catch (error) {
+        next(error)
     }
-
-    catch (error) {
-        // really bad error handling system for now
-        console.log(error)
-        response.status(500).json({ message: 'error' })
-    }
-
 })
 
-// get a perticular post
-router.get('/:postid', async (request, response) => {
+// get a particular post
+router.get('/:postId', async (request, response, next) => {
     try {
-
-        const posts =  await Post.findByPk(request.params.postId, {
-            include: [User, { model: Comment, include: User }, Tag],
+        const post = await Post.findByPk(request.params.postId, {
+            include: [User, { model: Comment, include: User }, Tag, Topic],
         })
 
-        if (!posts) {
-            return res.status(404).json({ message: 'post not found' })
+        if (!post) {
+            throw new NotFoundError('Post not found')
         }
 
-        response.json(posts[0])
-    }
-
-    catch (error) {
-        // really bad error handling system for now
-        console.log(error)
-        response.status(500).json({ message: 'error' })
+        response.json(post)
+    } catch (error) {
+        next(error)
     }
 })
 
 // create a new post
-router.post('/new', auth, async (request, response) =>{
+router.post('/new', auth, async (request, response, next) => {
     try {
-        const { title, content, tags } = request.body
-        const userId = req.user.id
+        const { title, content, tags, topicId } = request.body
+        const userId = request.user.id
 
-        const post = await Post.create({ title, content, userId })
-        
-        const TagInstance = await Promise.all(
+        const post = await Post.create({ title, content, userId, topicId })
+
+        const tagInstances = await Promise.all(
             tags.map(async (tagName) => {
                 const [tag, created] = await Tag.findOrCreate({ where: { name: tagName } })
                 return tag
             })
         )
 
-        await post.addTags(TagInstance)
+        await post.addTags(tagInstances)
 
-        const postWithTags = await Post.findByPk(post.id, {include: Tag})
-        response.status(201).json( postWithTags )
-    }
-
-    catch (error) {
-        // really bad error handling system for now
-        console.log(error)
-        response.status(500).json({ message: 'error' })
+        const postWithTagsAndTopic = await Post.findByPk(post.id, { include: [Tag, Topic] })
+        response.status(201).json(postWithTagsAndTopic)
+    } catch (error) {
+        next(error)
     }
 })
 
 // search for a post
-router.get('/search', async (request, response) => {
+router.get('/search', async (request, response, next) => {
     try {
-        const { title, tags } = request.query
-        const where = {}
+        const { title, tags, topicId } = request.query
+        let where = {}
 
-        if ( title ) {
-            where.title = { [Op.like]: `%${title}$%` }
+        if (title) {
+            where.title = { [Op.like]: `%${title}%` }
         }
 
-        if ( tags ) {
+        if (tags) {
             where.tags = { [Op.contains]: tags.split(',') }
         }
 
+        if (topicId) {
+            where.topicId = topicId
+        }
+
         const posts = await Post.findAll({
-            where, 
-            include: [User, Tag],
+            where,
+            include: [User, Tag, Topic],
         })
 
         response.json(posts)
-    }
-
-    catch ( error ) {
-        console.log( error )
-        response.status(500).json({ message: 'error' })
+    } catch (error) {
+        next(error)
     }
 })
 
-module.exports = router
+export default router
