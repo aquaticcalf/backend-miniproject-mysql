@@ -4,7 +4,9 @@ this is the backend for a simple blog application built with node.js, express.js
 it provides apis for user authentication, creating and managing blog posts, comments, and user profiles.
 
 ### features
+
 - authentication
+
     - json web token (jwt) based authentication
 
     - user registration
@@ -12,6 +14,7 @@ it provides apis for user authentication, creating and managing blog posts, comm
     - user login
 
 - posts
+
     - get all posts
 
     - get a specific post
@@ -21,11 +24,13 @@ it provides apis for user authentication, creating and managing blog posts, comm
     - search for posts by title and tags
 
 - comments
+
     - get all comments for a specific post
 
     - create a new comment on a post
 
 - profiles
+
     - get the authenticated user's profile
 
     - get another user's profile
@@ -44,11 +49,12 @@ it provides apis for user authentication, creating and managing blog posts, comm
 
 ### getting started
 
+> [!note]
 > prerequisites
 > - node.js (v14 or later)
 > - mysql server
 
-*installation*
+**installation**
 
 1. clone the repository:
 
@@ -70,10 +76,11 @@ npm start
 
 ### api documentation
 
-the api documentation will be available once the server is running. you can access it at http://localhost:3000/api-docs -> not yet implemented
+the api documentation will be available once the server is running. you can access it at [`http://localhost:3000/api-docs`](http://localhost:3000/api-docs) -> not yet implemented
 
 ### license
-this project is licensed under the [mit license](license.md).
+
+this project is licensed under the [`mit license`](license.md).
 
 ### related projects
 
