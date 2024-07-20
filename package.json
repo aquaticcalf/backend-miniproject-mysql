@@ -4,11 +4,13 @@
   "description": "blog miniproject",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
@@ -18,5 +20,8 @@
     "mysql2": "^3.9.2",
     "nodemailer": "^6.9.14",
     "sequelize": "^6.37.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
   }
 }
