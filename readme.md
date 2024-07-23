@@ -50,7 +50,7 @@ it provides apis for user authentication, creating and managing blog posts, comm
 ### getting started
 
 > [!note]
-> prerequisites
+> **prerequisites**
 > - node.js (v14 or later)
 > - mysql server
 
@@ -86,4 +86,4 @@ this project is licensed under the [`mit license`](license.md).
 
 blog application frontend - the frontend for this blog application, built with react.
 
-blog application mongodb version - a version of this backend using mongodb instead of mysql.
+[`blog application mongodb version`](https://github.com/aquaticcalf/backend-miniproject-mangodb) - a version of this backend using mongodb instead of mysql.
